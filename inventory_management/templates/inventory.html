@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+    <script>
+        function fetchInventory() {
+            fetch('/get_inventory')
+                .then(response => response.json())
+                .then(data => updateInventoryTable(data));
+        }
+
+        function addItem() {
+            const itemName = document.getElementById('itemName').value;
+            const itemQuantity = parseInt(document.getElementById('itemQuantity').value, 10);
+            const itemCategory = document.getElementById('itemCategory').value;
+            const isPerishable = document.getElementById('isPerishable').checked;
+            const expiryDate = isPerishable ? document.getElementById('expiryDate').value : null;
+
+            fetch('/add_item', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name: itemName, quantity: itemQuantity, category: itemCategory, perishable: isPerishable, expiry_date: expiryDate })
+            })
+            .then(response => response.json())
+            .then(data => updateInventoryTable(data));
+        }
+
+        function removeItem(name) {
+            fetch('/remove_item', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name })
+            })
+            .then(response => response.json())
+            .then(data => updateInventoryTable(data));
+        }
+
+        function updateQuantity(name, quantity) {
+            fetch('/update_quantity', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, quantity })
+            })
+            .then(response => response.json())
+            .then(data => updateInventoryTable(data));
+        }
+
+        function updateInventoryTable(inventory) {
+            const table = document.getElementById('inventoryTable').getElementsByTagName('tbody')[0];
+            table.innerHTML = '';
+            inventory.forEach(item => {
+                const row = table.insertRow();
+                const cell1 = row.insertCell(0);
+                const cell2 = row.insertCell(1);
+                const cell3 = row.insertCell(2);
+                const cell4 = row.insertCell(3);
+                const cell5 = row.insertCell(4);
+                const cell6 = row.insertCell(5);
+
+                cell1.innerHTML = item.name;
+                cell2.innerHTML = item.quantity;
+                cell3.innerHTML = item.category;
+                cell4.innerHTML = item.perishable ? 'Yes' : 'No';
+                cell5.innerHTML = item.expiry_date ? item.expiry_date : 'N/A';
+                cell6.innerHTML = `<button onclick="removeItem('${item.name}')">Remove</button> <button onclick="updateQuantity('${item.name}', ${item.quantity + 1})">+</button> <button onclick="updateQuantity('${item.name}', ${item.quantity - 1})">-</button>`;
+            });
+        }
+
+        function toggleExpiryDateField() {
+            const isPerishable = document.getElementById('isPerishable').checked;
+            const expiryDateField = document.getElementById('expiryDateField');
+            expiryDateField.style.display = isPerishable ? 'block' : 'none';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchInventory();
+            document.getElementById('addItemForm').addEventListener('submit', event => {
+                event.preventDefault();
+                addItem();
+            });
+            document.getElementById('isPerishable').addEventListener('change', toggleExpiryDateField);
+        });
+    </script>
+</head>
+<body>
+    <h1>Inventory Management</h1>
+    <form id="addItemForm">
+        <label for="itemName">Item Name:</label>
+        <input type="text" id="itemName" required>
+        
+        <label for="itemQuantity">Quantity:</label>
+        <input type="number" id="itemQuantity" required>
+        
+        <label for="itemCategory">Category:</label>
+        <select id="itemCategory" required>
+            <option value="Dairy">Dairy</option>
+            <option value="Fruits/Vegetables">Fruits/Vegetables</option>
+            <option value="Cans">Cans</option>
+            <!-- Add more categories as needed -->
+        </select>
+
+        <label>
+            <input type="checkbox" id="isPerishable"> Is Perishable?
+        </label>
+
+        <div id="expiryDateField" style="display: none;">
+            <label for="expiryDate">Expiry Date:</label>
+            <input type="date" id="expiryDate">
+        </div>
+
+        <button type="submit">Add Item</button>
+    </form>
+
+    <table id="inventoryTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Quantity</th>
+                <th>Category</th>
+                <th>Perishable</th>
+                <th>Expiry Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</body>
+</html>
